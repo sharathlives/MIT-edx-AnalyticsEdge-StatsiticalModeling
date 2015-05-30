@@ -1,0 +1,108 @@
+# Unit 3, Modeling the Expert
+
+
+# Video 4
+
+# Read in dataset
+quality = read.csv("quality.csv")
+
+# Look at structure
+str(quality)
+
+#Create a plot for number of offic visits and narcotics prescribed
+plot(quality$OfficeVisits, quality$Narcotics, col = c("red", "blue") [quality$PoorCare], pch = 19)
+
+# Table outcome
+table(quality$PoorCare)
+
+# Baseline accuracy is based on most frequent outcome which is good care. Use most frequent #outcome to calculate baseline accuracy although we are trying to predict Poor Care.
+98/131
+
+# Install and load caTools package
+install.packages("caTools")
+library(caTools)
+
+# Randomly split data. sample.split ensures that the outcome variable is represented #proportionately  in both the test and the training sets
+set.seed(88)
+split = sample.split(quality$PoorCare, SplitRatio = 0.75)
+split
+
+# Create training and testing sets
+qualityTrain = subset(quality, split == TRUE)
+qualityTest = subset(quality, split == FALSE)
+
+# Logistic Regression Model. family = binomial indicates that this is a logistic regression
+# We are trying to predict the probability that Poor Care  = 1 and identify the poor care 
+# cases
+QualityLog = glm(PoorCare ~ OfficeVisits + Narcotics, data=qualityTrain, family=binomial)
+
+#Summarizing we see that the predictors are significant in the model. Note that the 
+# t-value is Estimate/Std. error. Therefore the singificance of the predictor depends on the 
+#both the estimate and the variance of that predictor. 
+#We also look at the AIV value. It is a measure of the qulaity of the model and like 
+#Adjusted R-squared
+summary(QualityLog). 
+
+# Make predictions on training set. Type = response gives us probabilities. 
+# We are trying to identify the cases where Poor Care  = 1 and identify Poor Care cases. 
+predictTrain = predict(QualityLog, type="response")
+
+# Analyze predictions. Indicates the range of all probabilties
+summary(predictTrain)
+
+#This shows that we are predicting higher probabilties for the actual Poor Care cases. This is a good sign because we are trying to predict a Poor Care case.
+tapply(predictTrain, qualityTrain$PoorCare, mean)
+
+
+
+# Video 5
+
+# Confusion matrix for threshold of 0.5. Threshold value helps us convert the predicted 
+# probability to an actual prediction of 0 or 1
+table(qualityTrain$PoorCare, predictTrain > 0.5)
+
+# Sensitivity and specificity
+#Sensitivity measures the true positive cases we get right
+#Specificity measures the false positive cases we get right
+10/25
+70/74
+
+# Confusion matrix for threshold of 0.7. 
+#With a higher threshold specificity went up and sensitivyt goes down
+table(qualityTrain$PoorCare, predictTrain > 0.7)
+
+# Sensitivity and specificity
+
+8/25
+73/74
+
+# Confusion matrix for threshold of 0.2
+#With a lower threshold our sensitivyt goes up and specificity goes down
+table(qualityTrain$PoorCare, predictTrain > 0.2)
+
+# Sensitivity and specificity
+16/25
+54/74
+
+
+
+# Video 6
+
+# Install and load ROCR package
+install.packages("ROCR")
+library(ROCR)
+
+# Prediction function. 
+ROCRpred = prediction(predictTrain, qualityTrain$PoorCare)
+
+# Performance function
+ROCRperf = performance(ROCRpred, "tpr", "fpr")
+
+# Plot ROC curve
+plot(ROCRperf)
+
+# Add colors
+plot(ROCRperf, colorize=TRUE)
+
+# Add threshold labels 
+plot(ROCRperf, colorize=TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj=c(-0.2,1.7))
